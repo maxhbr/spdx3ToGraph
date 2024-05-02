@@ -11,6 +11,9 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
+networkx = "*"
+pygraphviz = "*"
+pydot = "*"
 
 [build-system]
 requires = ["poetry-core"]
