@@ -6,11 +6,11 @@ authors = ["Author Name <author@example.com>"]
 # readme = "README.md"
 # license = "BSD"
 packages = [
-  { include = "sample_package" }
+  { include = "spdx3_to_graph" }
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 
 [build-system]
 requires = ["poetry-core"]
