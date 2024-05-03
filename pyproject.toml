@@ -13,7 +13,7 @@ packages = [
 python = "^3.11"
 networkx = "*"
 pygraphviz = "*"
-pydot = "*"
+# pydot = "*"
 
 [build-system]
 requires = ["poetry-core"]

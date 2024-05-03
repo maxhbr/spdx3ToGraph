@@ -12,63 +12,104 @@ import multiprocessing
 from collections import defaultdict
 import argparse
 from pathlib import Path
-import networkx as nx
-# from networkx.drawing.nx_agraph import write_dot
-# from networkx.drawing.nx_pydot import write_dot
+import collections.abc
 
 from . import spdx30 as spdx
 
+class SPDXPumlGraph():
 
-class SPDXGraph(nx.Graph):
-
-    def __init__(self, objectset):
-        super().__init__()
-        self.objectset = objectset
-        self.id_to_idx = {}
-        self.idx_to_id = {}
-        self.labels = {}
-
-        for o in objectset.foreach():
-            self.add_object(o)
-
-    def get_idx(self, id, label=None):
-        if id not in self.id_to_idx:
-            idx = len(self.id_to_idx)
-            self.id_to_idx[id] = idx
-            self.idx_to_id[idx] = id
+    def _get_idx(self, _id):
+        if _id is None:
+            logging.error(f"None id")
+            raise ValueError("None id")
+        if _id not in self.id_to_idx:
+            idx = f"o{len(self.id_to_idx)}"
+            self.id_to_idx[_id] = idx
+            self.idx_to_id[idx] = _id
             return idx
         else:
-            return self.id_to_idx[id]
-    
-    def set_label(self, idx, label):
-        self.labels[idx] = label
+            return self.id_to_idx[_id]
 
-    def get_id(self, idx):
-        return self.idx_to_id[idx]
+    def _get_idx_of_shaclobject(self, o):
+        if o is None:
+            logging.error(f"None object")
+            raise ValueError("None object")
+        _id = o._id
+        if o._id is None:
+            _id = id(o)
+            if _id not in self.id_to_idx:
+                logging.warn(f"None id for {type(o)}, use {_id}")
+        return self._get_idx(_id)
 
-    def add_relationship(self, r):
-        logging.debug(f"adding relationship {r}")
-        f = r.from_
-        fidx = self.get_idx(f)
-        ts = r.to
-        for t in ts:
-            tidx = self.get_idx(t)
-            self.add_edge(fidx, tidx, key=r.relationshipType)
+    def _create_node(self, o):
+        idx = self._get_idx_of_shaclobject(o)
+        if idx in self.inserted:
+            return idx
+        self.inserted.add(idx)
 
-    def add_object(self, o):
-        logging.debug(f"adding {o}")
-        idx = self.get_idx(id)
-        self.add_node(idx)
+        self.logging.debug(f"Create node: {o._id} as {idx}: {o}")
+        if isinstance(o, spdx.SHACLObject):
+            if isinstance(o, spdx.Element) and o.name is not None:
+                self.lines_defs.append(f"object \"<b>{o.name}</b>\\n{o.__class__.__name__}\" as {idx}")
+            elif o._id is None:
+                self.lines_defs.append(f"object \"{o.__class__.__name__}\" as {idx}")
+            else:
+                self.lines_defs.append(f"object \"{o._id}\\n{o.__class__.__name__}\" as {idx}")
 
-        # switch on class of o
-        if isinstance(o, spdx.Element):
-            self.set_label(idx, o.name)
-            self.add_edge(idx, self.get_idx(o.creationInfo), key='creationInfo')
+            for pyname, iri, compact in o.property_keys():
+                value = o._obj_data[iri]
+                if value is None:
+                    continue
+                if value == []:
+                    continue
+                if value == {}:
+                    continue
+                logging.debug(f"  {pyname} has value {value}")
+                if isinstance(value, spdx.SHACLObject):
+                    logging.debug(f"    {pyname} is of type SHACLObject")
+                    other_idx = self._create_node(value)
+                    if compact == "from":
+                        self.lines.append(f"{other_idx} <-- {idx}::{compact} : {compact}")
+                    else:
+                        self.lines.append(f"{idx}::{compact} --> {other_idx} : {compact}")
+                    continue
+                if isinstance(value, list) or isinstance(value, collections.abc.Iterable):
+                    logging.debug(f"    {pyname} has list of objects")
+                    if isinstance(value[0], spdx.SHACLObject):
+                        logging.debug(f"      {pyname} has list of objects")
+                        for v in value:
+                            other_idx = self._create_node(v)
+                            self.lines.append(f"{idx}::{compact} --> {other_idx} : {compact}")
+                        continue
 
-            if isinstance(o, spdx.Relationship):
-                self.add_relationship(o)
-
+                if isinstance(value, str):
+                    self.lines.append(f"{idx} : {compact} = \"{value}\"")
+                else:
+                    self.lines.append(f"{idx} : {compact} = {value}")
         return idx
+
+
+    def __init__(self, logging, objectset):
+        self.logging = logging
+        self.inserted = set()
+        self.lines_defs = []
+        self.lines = []
+        self.id_to_idx = {}
+        self.idx_to_id = {}
+
+        for o in objectset.foreach():
+            self._create_node(o)
+
+    def all_lines(self):
+        return ["@startuml"] + self.lines_defs + self.lines + ["@enduml"]
+
+    def print(self):
+        for l in self.all_lines():
+            print(l)
+    def write(self, f):
+        for l in self.all_lines():
+            f.write(l)
+            f.write("\n")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -90,12 +131,6 @@ def main():
         d = spdx.JSONLDDeserializer()
         d.read(f, objectset)
 
-    # if args.verbose:
-    #     spdx.print_tree(objectset.objects)
-
-    G = SPDXGraph(objectset)
-    if args.verbose:
-        logging.debug(f"Graph: {G}")
-
-    nx.write_graphml(G, f"{args.spdx}.graphml")
-    # nx.write_dot(G, f"{args.spdx}.dot")
+    P = SPDXPumlGraph(logging, objectset)
+    P.print()
+    P.write(open(f"{args.spdx}.puml", "w"))
