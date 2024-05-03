@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
 spdx="$1"
+shift
 puml="$spdx.puml"
 png="$spdx.png"
 
@@ -12,9 +13,18 @@ export spdx
 export puml
 entr_task() (
   set -ex
+
   nix develop --command poetry run python -m spdx3_to_graph -- -v "$spdx"
-  plantuml "$puml"
+  PLANTUML_LIMIT_SIZE=$(( 8192 * 10 )) plantuml "$puml"
 )
+
+if [[ "$#" -ge 1 ]]; then
+  if [[ "$1" == "--once" ]]; then
+    entr_task
+    exit 0
+  fi
+fi
+
 export -f entr_task
 
 if [[ ! -f "$puml" || ! -f "$png" ]]; then

@@ -767,7 +767,7 @@ class SHACLObject(object):
     def decode(cls, decoder, *, objectset=None):
         typ, obj_d = decoder.read_object()
         if typ is None:
-            raise TypeError("Unable to determine type for object")
+            raise TypeError(f"Unable to determine type for object {decoder.data}")
 
         obj = cls._make_object(typ)
         for key in (obj.ID_ALIAS, obj._OBJ_IRIS["_id"]):

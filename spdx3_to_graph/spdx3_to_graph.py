@@ -13,8 +13,13 @@ from collections import defaultdict
 import argparse
 from pathlib import Path
 import collections.abc
+import re
 
 from . import spdx30 as spdx
+
+def escape_string(s):
+    # escapes newlines and quotes
+    return s.replace("\n", "\\n").replace("\"", "\\\"")
 
 class SPDXPumlGraph():
 
@@ -32,7 +37,6 @@ class SPDXPumlGraph():
 
     def _get_idx_of_shaclobject(self, o):
         if o is None:
-            logging.error(f"None object")
             raise ValueError("None object")
         _id = o._id
         if o._id is None:
@@ -41,14 +45,26 @@ class SPDXPumlGraph():
                 logging.warn(f"None id for {type(o)}, use {_id}")
         return self._get_idx(_id)
 
-    def _create_node(self, o):
-        idx = self._get_idx_of_shaclobject(o)
-        if idx in self.inserted:
+    def _get_idx_of_str(self, o):
+        if o is None:
+            raise ValueError("None str")
+        if o not in self.id_to_idx:
+            idx = hashlib.md5(o.encode()).hexdigest()
+            self.id_to_idx[o] = idx
+            self.idx_to_id[idx] = o
             return idx
-        self.inserted.add(idx)
+        else:
+            return self.id_to_idx[o]
 
-        self.logging.debug(f"Create node: {o._id} as {idx}: {o}")
+
+    def _create_node(self, o):
         if isinstance(o, spdx.SHACLObject):
+            idx = self._get_idx_of_shaclobject(o)
+            if idx in self.inserted:
+                return idx
+            self.inserted.add(idx)
+            self.logging.debug(f"Create node: {o._id} as {idx}: {o}")
+
             if isinstance(o, spdx.Element) and o.name is not None:
                 self.lines_defs.append(f"object \"<b>{o.name}</b>\\n{o.__class__.__name__}\" as {idx}")
             elif o._id is None:
@@ -83,9 +99,16 @@ class SPDXPumlGraph():
                         continue
 
                 if isinstance(value, str):
-                    self.lines.append(f"{idx} : {compact} = \"{value}\"")
+                    self.lines.append(f"{idx} : {compact} = \"{escape_string(value)}\"")
                 else:
                     self.lines.append(f"{idx} : {compact} = {value}")
+        elif isinstance(o, str):
+            idx = self._get_idx_of_str(o)
+            self.logging.debug(f"Create str node: {idx}")
+            self.lines_defs.append(f"object \"{escape_string(o)}\" as {idx}")
+        else:
+            raise ValueError(f"Unknown type {type(o)}")
+
         return idx
 
 
