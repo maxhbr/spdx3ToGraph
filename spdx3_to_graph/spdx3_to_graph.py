@@ -23,43 +23,54 @@ def escape_string(s):
 
 class SPDXPumlGraph():
 
-    def _get_idx(self, _id):
+    def _get_idx(self, _id, doc_idx=None):
         if _id is None:
             logging.error(f"None id")
             raise ValueError("None id")
-        if _id not in self.id_to_idx:
+        key = (_id, doc_idx)
+        if key not in self.id_to_idx:
             idx = f"o{len(self.id_to_idx)}"
-            self.id_to_idx[_id] = idx
+            if doc_idx is not None:
+                idx = f"{doc_idx}_{idx}"
+            self.id_to_idx[key] = idx
             self.idx_to_id[idx] = _id
             return idx
         else:
-            return self.id_to_idx[_id]
-
-    def _get_idx_of_shaclobject(self, o):
+            return self.id_to_idx[key]
+    def _get_idx_of_shaclobject(self, o, doc_idx=None):
         if o is None:
             raise ValueError("None object")
         _id = o._id
         if o._id is None:
             _id = id(o)
-            if _id not in self.id_to_idx:
+            key = (_id, doc_idx)
+            if key not in self.id_to_idx:
                 logging.warn(f"None id for {type(o)}, use {_id}")
-        return self._get_idx(_id)
+        return self._get_idx(_id, doc_idx)
 
-    def _get_idx_of_str(self, o):
+    def _get_idx_of_str(self, o, doc_idx=None):
         if o is None:
             raise ValueError("None str")
-        if o not in self.id_to_idx:
+        key = (o, doc_idx)
+        if key not in self.id_to_idx:
             idx = hashlib.md5(o.encode()).hexdigest()
-            self.id_to_idx[o] = idx
+            if doc_idx is not None:
+                idx = f"{doc_idx}_{idx}"
+            self.id_to_idx[key] = idx
             self.idx_to_id[idx] = o
             return idx
         else:
-            return self.id_to_idx[o]
+            return self.id_to_idx[key]
 
+    def _create_doc(self, doc):
+        idx = self._get_idx_of_str(doc)
+        self.lines_defs.append(f"Package \"{doc}\" as {idx} "+"{")
+        self.docs_to_idx[doc] = idx
+        return idx
 
-    def _create_node(self, o):
+    def _create_node(self, o, doc_idx=None):
         if isinstance(o, spdx.SHACLObject):
-            idx = self._get_idx_of_shaclobject(o)
+            idx = self._get_idx_of_shaclobject(o, doc_idx=doc_idx)
             if idx in self.inserted:
                 return idx
             self.inserted.add(idx)
@@ -83,7 +94,7 @@ class SPDXPumlGraph():
                 logging.debug(f"  {pyname} has value {value}")
                 if isinstance(value, spdx.SHACLObject):
                     logging.debug(f"    {pyname} is of type SHACLObject")
-                    other_idx = self._create_node(value)
+                    other_idx = self._create_node(value, doc_idx=doc_idx)
                     if compact == "from":
                         self.lines.append(f"{other_idx} <-- {idx}::{compact} : {compact}")
                     else:
@@ -94,16 +105,25 @@ class SPDXPumlGraph():
                     if isinstance(value[0], spdx.SHACLObject):
                         logging.debug(f"      {pyname} has list of objects")
                         for v in value:
-                            other_idx = self._create_node(v)
+                            other_idx = self._create_node(v, doc_idx=doc_idx)
                             self.lines.append(f"{idx}::{compact} --> {other_idx} : {compact}")
                         continue
+                    if isinstance(value[0], str):
+                        for v in value:
+                            for (_id, doc_idx2), idx2 in self.id_to_idx.items():
+                                if _id == v and doc_idx2 != doc_idx:
+                                    self.lines.append(f"{idx}::{compact} <... {idx2} : {compact}")
 
                 if isinstance(value, str):
                     self.lines.append(f"{idx} : {compact} = \"{escape_string(value)}\"")
+                    for (_id, doc_idx2), idx2 in self.id_to_idx.items():
+                        if _id == value and doc_idx2 != doc_idx:
+                            self.lines.append(f"{idx}::{compact} <... {idx2} : {compact}")
+
                 else:
                     self.lines.append(f"{idx} : {compact} = {value}")
         elif isinstance(o, str):
-            idx = self._get_idx_of_str(o)
+            idx = self._get_idx_of_str(o, doc_idx=doc_idx)
             self.logging.debug(f"Create str node: {idx}")
             self.lines_defs.append(f"object \"{escape_string(o)}\" as {idx}")
         else:
@@ -112,16 +132,23 @@ class SPDXPumlGraph():
         return idx
 
 
-    def __init__(self, logging, objectset):
+    def __init__(self, logging):
         self.logging = logging
         self.inserted = set()
         self.lines_defs = []
         self.lines = []
         self.id_to_idx = {}
         self.idx_to_id = {}
+        self.docs_to_idx = {}
 
+    def add_objectset(self, objectset, doc=None):
+        doc_idx = None
+        if doc is not None:
+            doc_idx = self._create_doc(doc)
         for o in objectset.foreach():
-            self._create_node(o)
+            self._create_node(o, doc_idx=doc_idx)
+        if doc_idx != None:
+            self.lines_defs.append("}")
 
     def all_lines(self):
         return ["@startuml"] + self.lines_defs + self.lines + ["@enduml"]
@@ -139,21 +166,31 @@ def main():
                     prog='spdx3_to_graph',
                     description='create a visualization of SPDX 3.0 documents',)
     parser.add_argument('-v', '--verbose', action='store_true')
-    parser.add_argument('spdx', type=Path)
+    parser.add_argument('spdx', metavar='SPDX', type=Path, nargs='+')
 
 
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
 
     logging.debug(f"args: {args}")
-    logging.info(f"Processing {args.spdx}")
+    logging.info(f"Processing files: {args.spdx}")
 
-    objectset = spdx.SHACLObjectSet()
-    with args.spdx.open("r") as f:
-        d = spdx.JSONLDDeserializer()
-        d.read(f, objectset)
+    P = SPDXPumlGraph(logging)
 
-    P = SPDXPumlGraph(logging, objectset)
-    P.print()
-    P.write(open(f"{args.spdx}.puml", "w"))
+    d = spdx.JSONLDDeserializer()
+    for spdx_ in args.spdx:
+        logging.info(f"Processing file: {spdx_.name}")
+        with spdx_.open("r") as f:
+            objectset = spdx.SHACLObjectSet()
+            d.read(f, objectset)
+            doc = spdx_.name if len(args.spdx) > 1 else None
+            P.add_objectset(objectset, doc=spdx_.name)
+
+    if args.verbose:
+        P.print()
+    puml = args.spdx[0].with_suffix(".json.puml")
+    P.write(open(puml, "w"))

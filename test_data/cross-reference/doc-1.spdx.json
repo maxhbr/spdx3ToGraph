@@ -1,0 +1,55 @@
+{
+    "@context": "https://spdx.org/rdf/3.0.0/spdx-context.jsonld",
+    "@graph": [
+        {
+            "type": "CreationInfo",
+            "@id": "_:creationinfo1",
+            "specVersion": "3.0.0",
+            "createdBy": [
+                "http://spdx.example.com/Person/JoshuaWatt"
+            ],
+            "created": "2024-05-08T00:00:00Z"
+        },
+        {
+            "type": "SpdxDocument",
+            "spdxId": "http://spdx.example.com/Document2",
+            "creationInfo": "_:creationinfo1",
+            "profileConformance": [
+                "core",
+                "software"
+            ],
+            "imports": [
+                {
+                    "type": "ExternalMap",
+                    "externalSpdxId": "http://spdx.example.com/Person/JoshuaWatt",
+                    "locationHint": "http://downloads.example.com/Document1.spdx.json",
+                    "verifiedUsing": [{
+                        "type": "Hash",
+                        "algorithm": "sha256",
+                        "hashValue": "3ba8c249c1ba1b6fe20582de88a5123b317632a5a94ba27199d01724df4eb149"
+                    }],
+                    "definingArtifact": "http://spdx.example.com/Document1-Artifact"
+                }
+            ]
+        },
+        {
+            "type": "software_File",
+            "spdxId": "http://spdx.example.com/Document1-Artifact",
+            "creationInfo": "_:creationinfo1",
+            "software_fileKind": "file",
+            "software_primaryPurpose": "file",
+            "software_contentType": "application/spdx+json",
+            "verifiedUsing": [{
+                "type": "Hash",
+                "algorithm": "sha256",
+                "hashValue": "3ba8c249c1ba1b6fe20582de88a5123b317632a5a94ba27199d01724df4eb149"
+            }],
+            "originatedBy": [
+                "http://spdx.example.com/Person/JoshuaWatt"
+            ],
+            "suppliedBy": "http://spdx.example.com/Person/JoshuaWatt",
+            "releaseTime": "2024-03-06T00:00:00Z",
+            "builtTime": "2024-03-06T00:00:00Z"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "@context": "https://spdx.org/rdf/3.0.0/spdx-context.jsonld",
+    "@graph": [
+        {
+            "type": "Person",
+            "spdxId": "http://spdx.example.com/Person/JoshuaWatt",
+            "creationInfo": "_:creationinfo",
+            "name": "Joshua Watt",
+            "externalIdentifier": [
+                {
+                    "type": "ExternalIdentifier",
+                    "externalIdentifierType": "email",
+                    "identifier": "JPEWhacker@gmail.com"
+                }
+            ]
+        },
+        {
+            "type": "CreationInfo",
+            "@id": "_:creationinfo",
+            "specVersion": "3.0.0",
+            "createdBy": [
+                "http://spdx.example.com/Person/JoshuaWatt"
+            ],
+            "created": "2024-03-06T00:00:00Z"
+        },
+        {
+            "type": "SpdxDocument",
+            "spdxId": "http://spdx.example.com/Document1",
+            "creationInfo": "_:creationinfo",
+            "profileConformance": [
+                "core"
+            ],
+            "rootElement": [
+                "http://spdx.example.com/Person/JoshuaWatt"
+            ]
+        }
+    ]
+}

@@ -4,39 +4,35 @@ set -euo pipefail
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
-spdx="$1"
-shift
-puml="$spdx.puml"
-png="$spdx.png"
+echo "## run $0 with $@"
 
-export spdx
-export puml
-entr_task() (
-  set -ex
+if [[ "$#" -ge 1 && "$1" == "--once" ]]; then
+  shift
 
-  nix develop --command poetry run python -m spdx3_to_graph -- -v "$spdx"
-  PLANTUML_LIMIT_SIZE=$(( 8192 * 10 )) plantuml "$puml"
-)
+  (set -x; nix develop --command poetry run python -m spdx3_to_graph -- -v "$@")
 
-if [[ "$#" -ge 1 ]]; then
-  if [[ "$1" == "--once" ]]; then
-    entr_task
-    exit 0
+  spdx="$1"
+  puml="$spdx.puml"
+  png="$spdx.png"
+  if [[ -f "$puml" ]]; then
+    (set -x; PLANTUML_LIMIT_SIZE=$(( 8192 * 10 )) plantuml "$puml")
+  else
+    echo "$puml not found"
   fi
-fi
-
-export -f entr_task
-
-if [[ ! -f "$puml" || ! -f "$png" ]]; then
-  entr_task "$spdx"
-fi
-
-sxiv "$png" & 
-trap 'kill $(jobs -p)' EXIT
-
-while sleep 1; do
-  cat <<EOF | entr -dr bash -c entr_task
+else
+  while sleep 1; do
+    set -x
+    cat <<EOF | entr -dr $0 --once "$@"
 $(find spdx3_to_graph/ -iname '*.py')
 $1
 EOF
-done
+  done
+fi
+
+# if [[ ! -f "$puml" || ! -f "$png" ]]; then
+#   "$0" --once "$@"
+# fi
+
+# sxiv "$png" & 
+# trap 'kill $(jobs -p)' EXIT
+
