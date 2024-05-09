@@ -112,13 +112,13 @@ class SPDXPumlGraph():
                         for v in value:
                             for (_id, doc_idx2), idx2 in self.id_to_idx.items():
                                 if _id == v and doc_idx2 != doc_idx:
-                                    self.lines.append(f"{idx}::{compact} <... {idx2} : {compact}")
+                                    self.lines.append(f" {idx2} <... {idx}::{compact}: {compact}")
 
                 if isinstance(value, str):
                     self.lines.append(f"{idx} : {compact} = \"{escape_string(value)}\"")
                     for (_id, doc_idx2), idx2 in self.id_to_idx.items():
                         if _id == value and doc_idx2 != doc_idx:
-                            self.lines.append(f"{idx}::{compact} <... {idx2} : {compact}")
+                            self.lines.append(f" {idx2} <... {idx}::{compact}: {compact}")
 
                 else:
                     self.lines.append(f"{idx} : {compact} = {value}")

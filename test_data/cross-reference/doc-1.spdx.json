@@ -29,6 +29,17 @@
                         "hashValue": "3ba8c249c1ba1b6fe20582de88a5123b317632a5a94ba27199d01724df4eb149"
                     }],
                     "definingArtifact": "http://spdx.example.com/Document1-Artifact"
+                },
+                {
+                    "type": "ExternalMap",
+                    "externalSpdxId": "http://spdx.example.com/Document1",
+                    "locationHint": "http://downloads.example.com/Document1.spdx.json",
+                    "verifiedUsing": [{
+                        "type": "Hash",
+                        "algorithm": "sha256",
+                        "hashValue": "3ba8c249c1ba1b6fe20582de88a5123b317632a5a94ba27199d01724df4eb149"
+                    }],
+                    "definingArtifact": "http://spdx.example.com/Document1-Artifact"
                 }
             ]
         },
@@ -50,6 +61,16 @@
             "suppliedBy": "http://spdx.example.com/Person/JoshuaWatt",
             "releaseTime": "2024-03-06T00:00:00Z",
             "builtTime": "2024-03-06T00:00:00Z"
+        },
+        {
+            "spdxId": "http://spdx.example.com/Document1-serializedInArtifact-Artifact",
+            "type": "Relationship",
+            "creationInfo": "_:creationinfo1",
+            "relationshipType": "serializedInArtifact",
+            "from": "http://spdx.example.com/Document1",
+            "to": [
+                "http://spdx.example.com/Document1-Artifact"
+            ]
         }
     ]
 }
