@@ -3,11 +3,13 @@
 Create a visualization of SPDX 3.0 documents.
 
 spdx3ToGraph converts an SPDX 3 JSON-LD file to a graph, using
-[PlantUML](https://plantuml.com/) textual description.
+[PlantUML](https://en.wikipedia.org/wiki/PlantUML) textual description.
 
-The resulting output can be use as an input to a visualization tool like one on
-[www.plantuml.com](http://www.plantuml.com) to get a PNG image, a SVG vector
-graphic, or an ASCII Art.
+The resulting output can be use as an input to
+[a visualization tool](https://plantuml.com/) like to get a PNG image, a SVG
+vector graphic, or an ASCII art.
+[An online visualizer](https://www.plantuml.com/plantuml/uml/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000)
+is also available.
 
 To get started, run the following:
 
