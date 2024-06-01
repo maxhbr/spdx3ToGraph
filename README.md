@@ -34,7 +34,7 @@ with
 
 ```shell
 nix develop --extra-experimental-features nix-command --extra-experimental-features flakes
-poetry run python -m spdx3_to_graph -- -v sbom.json > sbom.puml
+poetry run python -m spdx3_to_graph -- -v sbom.json
 ```
 
-Your SBOM visualization will be in `sbom.puml` file.
+Your SBOM visualization will be in `sbom.json.puml` file.
