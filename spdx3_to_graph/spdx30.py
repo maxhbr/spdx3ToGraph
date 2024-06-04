@@ -9,13 +9,14 @@
 import functools
 import hashlib
 import json
+import logging
 import re
-import time
 import threading
-from contextlib import contextmanager
-from datetime import datetime, timezone, timedelta
-from enum import Enum
+import time
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+from enum import Enum
 
 
 def check_type(obj, types):
@@ -40,6 +41,7 @@ class Property(ABC):
         return None
 
     def validate(self, value):
+        logging.debug(f"Validating {value}")
         check_type(value, self.VALID_TYPES)
         if self.pattern is not None and not re.search(
             self.pattern, self.to_string(value)
