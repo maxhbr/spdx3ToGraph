@@ -16,25 +16,32 @@ is also available.
 
 ## Usage
 
-To get started, run the following:
-
-```shell
-nix develop
-poetry run python -m spdx3_to_graph -- -v test_data/package_sbom.json 
-```
-
-The output will be the lines between `@startuml` and `@enduml`.
+### Preparing running environment
 
 [Nix](https://nixos.org/) is required to create a running environment for
 spdx3ToGraph.
 
-In some machine configurations, you may need to replace the `nix develop` line
-with
-`nix develop --extra-experimental-features nix-command --extra-experimental-features flakes`.
+To get started, run the following to prepare the running environment:
+
+```shell
+nix develop
+```
+
+In some machine configurations, you may need to enable the Nix experimental
+features as well. To do so, use this line instead:
 
 ```shell
 nix develop --extra-experimental-features nix-command --extra-experimental-features flakes
-poetry run python -m spdx3_to_graph -- -v sbom.json
 ```
 
-Your SBOM visualization will be in `sbom.json.puml` file.
+### Run the script
+
+```shell
+poetry run python -m spdx3_to_graph -- -v test_data/package_sbom.json
+```
+
+The output will be printed on the screen (the lines between `@startuml` and
+`@enduml`) as well as be written to a PUML file.
+
+For example, if the input file is `package_sbom.json`, the output file will be
+`package_sbom.json.puml`.
