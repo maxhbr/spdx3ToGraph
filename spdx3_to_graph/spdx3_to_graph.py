@@ -100,7 +100,7 @@ class SPDXPumlGraph():
                     else:
                         self.lines.append(f"{idx}::{compact} --> {other_idx} : {compact}")
                     continue
-                if isinstance(value, list) or isinstance(value, collections.abc.Iterable):
+                if (isinstance(value, list) or isinstance(value, collections.abc.Iterable)) and len(value) > 0:
                     logging.debug(f"    {pyname} has list of objects")
                     if isinstance(value[0], spdx.SHACLObject):
                         logging.debug(f"      {pyname} has list of objects")
