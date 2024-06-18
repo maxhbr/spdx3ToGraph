@@ -19,7 +19,8 @@ is also available.
 ### Preparing running environment
 
 [Nix](https://nixos.org/) is required to create a running environment for
-spdx3ToGraph.
+spdx3ToGraph. A graphical installer is
+[also available](https://determinate.systems/oss/).
 
 To get started, run the following to prepare the running environment:
 
